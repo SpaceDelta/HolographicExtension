@@ -26,6 +26,8 @@ import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kitesoftware.holograms.listener.wrapper.WrapperPlayServerEntityMetadata;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -53,6 +55,17 @@ public class PacketPlaceholderListener extends PacketAdapter {
         PacketContainer packet = event.getPacket();
 
         if (packet.getType() == PacketType.Play.Server.ENTITY_METADATA) {
+            // Start SpaceDelta
+            WrapperPlayServerEntityMetadata entityMetadataPacketOriginal = new WrapperPlayServerEntityMetadata(packet);
+
+            Entity entity = entityMetadataPacketOriginal.getEntity(event);
+
+            if(entity == null || entity.getType() != EntityType.ARMOR_STAND) {
+                // only edit armor stands
+                return;
+            }
+            // End SpaceDelta
+
             WrapperPlayServerEntityMetadata entityMetadataPacket = new WrapperPlayServerEntityMetadata(packet.deepClone());
             List<WrappedWatchableObject> dataWatcherValues = entityMetadataPacket.getEntityMetadata();
 
@@ -95,7 +108,16 @@ public class PacketPlaceholderListener extends PacketAdapter {
             customName = (String) customNameWatchableObjectValue;
         }
 
+        // Start SpaceDelta
+        String originalCustomName = customName;
+
         customName = PlaceholderAPI.setPlaceholders(player, customName);
+
+        if(originalCustomName.equalsIgnoreCase(customName)) {
+            // no changes occurred
+            return false;
+        }
+        // End SpaceDelta
 
         if (useOptional) { // 1.13 or above
             customNameWatchableObject.setValue(Optional.of(WrappedChatComponent.fromJson(customName).getHandle()));
